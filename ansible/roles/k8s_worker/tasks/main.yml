@@ -1,0 +1,12 @@
+---
+- name: Read join command from control node
+  ansible.builtin.slurp:
+    src: /tmp/kube_join_command.sh
+  register: kube_join_script
+  delegate_to: localhost
+  become: false
+
+- name: Join worker to Kubernetes cluster
+  ansible.builtin.command: "{{ kube_join_script.content | b64decode }}"
+  args:
+    creates: /etc/kubernetes/kubelet.conf

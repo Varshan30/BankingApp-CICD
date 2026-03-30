@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mobile Banking Control Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <div class="bg-shape bg-shape-1" aria-hidden="true"></div>
+    <div class="bg-shape bg-shape-2" aria-hidden="true"></div>
+
+    <main class="layout">
+      <header class="hero">
+        <p class="eyebrow">Mobile Banking Backend</p>
+        <h1>Operations Console</h1>
+        <p class="subtitle">Query account balances and execute fund transfers against your running API service.</p>
+      </header>
+
+      <section class="grid">
+        <article class="card reveal">
+          <h2>Account Lookup</h2>
+          <p class="hint">Try account IDs: <span>1001</span> or <span>1002</span></p>
+          <form id="accountForm" class="stack">
+            <label for="accountId">Account ID</label>
+            <input id="accountId" name="accountId" type="text" placeholder="1001" required />
+            <button type="submit">Fetch Account</button>
+          </form>
+          <pre id="accountResult" class="result">Waiting for request...</pre>
+        </article>
+
+        <article class="card reveal delay-1">
+          <h2>Transfer Funds</h2>
+          <form id="transferForm" class="stack">
+            <label for="fromAccount">From Account</label>
+            <input id="fromAccount" name="fromAccount" type="text" placeholder="1001" required />
+
+            <label for="toAccount">To Account</label>
+            <input id="toAccount" name="toAccount" type="text" placeholder="1002" required />
+
+            <label for="amount">Amount</label>
+            <input id="amount" name="amount" type="number" step="0.01" min="0.01" placeholder="100.00" required />
+
+            <button type="submit">Transfer</button>
+          </form>
+          <pre id="transferResult" class="result">Waiting for request...</pre>
+        </article>
+
+        <article class="card reveal delay-1">
+          <h2>Beneficiary Management</h2>
+          <form id="beneficiaryForm" class="stack">
+            <label for="beneficiaryAccountId">Account ID</label>
+            <input id="beneficiaryAccountId" name="beneficiaryAccountId" type="text" placeholder="1001" required />
+
+            <label for="beneficiaryName">Beneficiary Name</label>
+            <input id="beneficiaryName" name="beneficiaryName" type="text" placeholder="City Power Utility" required />
+
+            <label for="beneficiaryNumber">Beneficiary Account Number</label>
+            <input id="beneficiaryNumber" name="beneficiaryNumber" type="text" placeholder="UTIL-44521" required />
+
+            <label for="beneficiaryBank">Bank Name</label>
+            <input id="beneficiaryBank" name="beneficiaryBank" type="text" placeholder="Utility Payments Bank" required />
+
+            <button type="submit">Add Beneficiary</button>
+          </form>
+
+          <form id="beneficiaryListForm" class="stack split-gap">
+            <label for="beneficiaryListAccountId">Account ID for List</label>
+            <input id="beneficiaryListAccountId" name="beneficiaryListAccountId" type="text" placeholder="1001" required />
+            <button type="submit">View Beneficiaries</button>
+          </form>
+
+          <pre id="beneficiaryResult" class="result">Waiting for request...</pre>
+        </article>
+
+        <article class="card reveal delay-2">
+          <h2>Bill Payment</h2>
+          <form id="billPaymentForm" class="stack">
+            <label for="billAccountId">Account ID</label>
+            <input id="billAccountId" name="billAccountId" type="text" placeholder="1001" required />
+
+            <label for="billBeneficiaryId">Beneficiary ID</label>
+            <input id="billBeneficiaryId" name="billBeneficiaryId" type="text" placeholder="b-1001-01" required />
+
+            <label for="billerName">Biller Name</label>
+            <input id="billerName" name="billerName" type="text" placeholder="Electricity Department" required />
+
+            <label for="billAmount">Amount</label>
+            <input id="billAmount" name="billAmount" type="number" step="0.01" min="0.01" placeholder="250.00" required />
+
+            <button type="submit">Pay Bill</button>
+          </form>
+          <pre id="billPaymentResult" class="result">Waiting for request...</pre>
+        </article>
+
+        <article class="card reveal delay-2">
+          <h2>Transaction History</h2>
+          <form id="transactionsForm" class="stack">
+            <label for="transactionsAccountId">Account ID</label>
+            <input id="transactionsAccountId" name="transactionsAccountId" type="text" placeholder="1001" required />
+
+            <label for="transactionsLimit">Limit</label>
+            <input id="transactionsLimit" name="transactionsLimit" type="number" min="1" max="100" value="10" required />
+
+            <button type="submit">Fetch Transactions</button>
+          </form>
+          <pre id="transactionsResult" class="result">Waiting for request...</pre>
+        </article>
+      </section>
+
+      <footer class="footer reveal delay-2">
+        <a href="/health" target="_blank" rel="noreferrer">Health</a>
+        <a href="/ready" target="_blank" rel="noreferrer">Readiness</a>
+        <a href="/api" target="_blank" rel="noreferrer">API Info</a>
+      </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
+</html>
