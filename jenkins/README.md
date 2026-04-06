@@ -66,11 +66,11 @@ Important:
 
 	Or manual Docker command:
 
-	docker run -d --name jenkins -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
+	docker run -d --name jenkins -p 8081:8080 -p 50000:50000 jenkins/jenkins:lts
 
 2. Open Jenkins:
 
-	http://localhost:8080
+	http://localhost:8081
 
 3. Create Pipeline job:
 
