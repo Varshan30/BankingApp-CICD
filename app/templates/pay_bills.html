@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block page_title %}Pay Bills | NovaBank{% endblock %}
+
+{% block content %}
+<section class="dashboard-grid page-grid">
+  <article class="panel reveal delay-1">
+    <h2>Pay a bill</h2>
+    <form id="billPaymentForm" class="stack">
+      <label for="billBeneficiaryId">Payee</label>
+      <select id="billBeneficiaryId" required></select>
+
+      <label for="billerName">Biller reference</label>
+      <input id="billerName" type="text" placeholder="Electricity Department" required />
+
+      <label for="billAmount">Amount (INR)</label>
+      <input id="billAmount" type="number" step="0.01" min="0.01" placeholder="850.00" required />
+
+      <button class="button" type="submit">Pay now</button>
+    </form>
+    <p id="billPaymentResult" class="feedback">No bill payment submitted yet.</p>
+  </article>
+
+  <article class="panel reveal delay-2">
+    <h2>Add payee</h2>
+    <form id="beneficiaryForm" class="stack">
+      <label for="beneficiaryName">Name</label>
+      <input id="beneficiaryName" type="text" placeholder="City Power Utility" required />
+
+      <label for="beneficiaryNumber">Account number</label>
+      <input id="beneficiaryNumber" type="text" placeholder="UTIL-44521" required />
+
+      <label for="beneficiaryBank">Bank name</label>
+      <input id="beneficiaryBank" type="text" placeholder="Utility Payments Bank" required />
+
+      <button class="button" type="submit">Add payee</button>
+    </form>
+    <p id="beneficiaryResult" class="feedback">No payee added yet.</p>
+  </article>
+</section>
+{% endblock %}

@@ -2,9 +2,14 @@
 set -euo pipefail
 
 pushd terraform/aws > /dev/null
+terraform fmt -recursive
 terraform init
+terraform validate
 terraform plan -out tfplan
 terraform apply tfplan
+
+echo "\nTerraform outputs:"
+terraform output
 popd > /dev/null
 
 echo "Infrastructure provisioned."

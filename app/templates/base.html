@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block page_title %}NovaBank Digital Banking{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css', v='20260330a') }}" />
+  </head>
+  <body data-page="{{ active_page }}">
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-1" aria-hidden="true"></div>
+    <div class="bg-orb bg-orb-2" aria-hidden="true"></div>
+
+    <main class="app-shell">
+      <header class="topbar reveal">
+        <div>
+          <p class="eyebrow">NovaBank</p>
+          <h1>Digital Banking</h1>
+        </div>
+        <div class="topbar-right">
+          <label for="accountSelector">Active account</label>
+          <select id="accountSelector">
+            <option value="" disabled selected>Loading accounts...</option>
+          </select>
+        </div>
+      </header>
+
+      <nav class="app-nav reveal delay-1" aria-label="Primary">
+        <a href="/" class="nav-link {% if active_page == 'home' %}active{% endif %}">Home</a>
+        <a href="/transactions" class="nav-link {% if active_page == 'transactions' %}active{% endif %}">Transaction History</a>
+        <a href="/pay-bills" class="nav-link {% if active_page == 'pay-bills' %}active{% endif %}">Pay Bills</a>
+        <a href="/gift-cards" class="nav-link {% if active_page == 'gift-cards' %}active{% endif %}">Gift Cards</a>
+        <a href="/cards" class="nav-link {% if active_page == 'cards' %}active{% endif %}">Cards</a>
+      </nav>
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js', v='20260330a') }}"></script>
+  </body>
+</html>

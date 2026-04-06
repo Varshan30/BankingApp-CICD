@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block page_title %}Gift Cards | NovaBank{% endblock %}
+
+{% block content %}
+<section class="dashboard-grid page-grid">
+  <article class="panel reveal delay-1">
+    <h2>Gift card store</h2>
+    <div id="giftCardCatalog" class="catalog-grid"></div>
+  </article>
+
+  <article class="panel reveal delay-2">
+    <h2>Purchase gift card</h2>
+    <form id="giftCardForm" class="stack">
+      <label for="giftCardSelector">Gift card</label>
+      <select id="giftCardSelector" required></select>
+
+      <label for="giftCardAmount">Amount (INR)</label>
+      <input id="giftCardAmount" type="number" step="0.01" min="0.01" required readonly />
+
+      <button class="button" type="submit">Buy gift card</button>
+    </form>
+    <p id="giftCardResult" class="feedback">No gift card purchased yet.</p>
+  </article>
+</section>
+{% endblock %}

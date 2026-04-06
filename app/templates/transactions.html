@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block page_title %}Transaction History | NovaBank{% endblock %}
+
+{% block content %}
+<section class="dashboard-grid page-grid">
+  <article class="panel reveal delay-1">
+    <div class="panel-title-row">
+      <h2>All transactions</h2>
+      <button id="transactionsRefreshButton" class="button ghost" type="button">Refresh</button>
+    </div>
+    <div class="inline-form">
+      <label for="transactionsLimit">Records</label>
+      <input id="transactionsLimit" type="number" min="5" max="100" value="20" />
+    </div>
+    <ul id="transactionsPageList" class="transaction-list"></ul>
+  </article>
+
+  <article class="panel reveal delay-2">
+    <h2>Insights</h2>
+    <p id="transactionsSummary" class="hint">Loading insights...</p>
+    <p class="hint">Tip: Use the account selector in the top-right to switch between account histories.</p>
+  </article>
+</section>
+{% endblock %}

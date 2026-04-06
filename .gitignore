@@ -30,6 +30,7 @@ Thumbs.db
 # Terraform
 terraform/.terraform/
 terraform/**/.terraform/
+terraform/**/terraform.tfvars
 *.tfstate
 *.tfstate.backup
 *.tfplan

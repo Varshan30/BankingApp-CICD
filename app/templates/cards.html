@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block page_title %}Cards | NovaBank{% endblock %}
+
+{% block content %}
+<section class="dashboard-grid page-grid">
+  <article class="panel reveal delay-1">
+    <div class="panel-title-row">
+      <h2>Card controls</h2>
+      <button id="cardsRefreshButton" class="button ghost" type="button">Refresh</button>
+    </div>
+    <div id="cardsList" class="cards-list"></div>
+  </article>
+
+  <article class="panel reveal delay-2">
+    <h2>Add card manually</h2>
+    <form id="addCardForm" class="stack">
+      <label for="newCardLast4">Card last 4 digits</label>
+      <input id="newCardLast4" type="text" inputmode="numeric" maxlength="4" placeholder="7812" required />
+
+      <label for="newCardType">Card type</label>
+      <select id="newCardType" required>
+        <option value="Debit">Debit</option>
+        <option value="Credit">Credit</option>
+        <option value="Prepaid">Prepaid</option>
+      </select>
+
+      <label for="newCardNetwork">Network</label>
+      <select id="newCardNetwork" required>
+        <option value="RuPay">RuPay</option>
+        <option value="Visa">Visa</option>
+        <option value="Mastercard">Mastercard</option>
+      </select>
+
+      <label for="newCardLimit">Daily limit (INR)</label>
+      <input id="newCardLimit" type="number" min="1000" step="100" value="10000" required />
+
+      <button class="button" type="submit">Add card</button>
+    </form>
+    <p id="addCardResult" class="feedback">No card added yet.</p>
+
+    <h2>Card tips</h2>
+    <p class="hint">Block your card instantly if misplaced, and use daily limits for tighter spending control.</p>
+    <div class="status-row">
+      <a href="/health" target="_blank" rel="noreferrer">Health</a>
+      <a href="/api" target="_blank" rel="noreferrer">API Info</a>
+    </div>
+  </article>
+</section>
+{% endblock %}
