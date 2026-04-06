@@ -10,44 +10,49 @@ variable "project_name" {
   default     = "banking-devops"
 }
 
-variable "vpc_cidr" {
-  description = "CIDR block for VPC"
+variable "environment" {
+  description = "Environment tag value (for example: dev, test, prod)"
   type        = string
-  default     = "10.10.0.0/16"
+  default     = "dev"
 }
 
-variable "cluster_version" {
-  description = "Kubernetes version for EKS control plane"
+variable "create_minikube_ec2" {
+  description = "Set true to create one EC2 host and install Minikube on it"
+  type        = bool
+  default     = false
+}
+
+variable "ec2_size_profile" {
+  description = "Beginner-friendly EC2 size: small or medium"
   type        = string
-  default     = "1.30"
+  default     = "small"
+
+  validation {
+    condition     = contains(["small", "medium"], var.ec2_size_profile)
+    error_message = "ec2_size_profile must be either small or medium."
+  }
 }
 
-variable "node_instance_types" {
-  description = "Managed node group instance types"
-  type        = list(string)
-  default     = ["t3.large"]
+variable "ec2_instance_type_override" {
+  description = "Optional advanced override for exact instance type (for example: t3.large). Keep empty for profile-based selection."
+  type        = string
+  default     = ""
 }
 
-variable "node_desired_size" {
-  description = "Desired node count for managed node group"
-  type        = number
-  default     = 3
+variable "key_name" {
+  description = "Optional EC2 key pair name for SSH"
+  type        = string
+  default     = ""
 }
 
-variable "node_min_size" {
-  description = "Minimum node count for managed node group"
-  type        = number
-  default     = 2
+variable "allowed_ssh_cidr" {
+  description = "CIDR allowed to SSH to Minikube EC2"
+  type        = string
+  default     = "0.0.0.0/0"
 }
 
-variable "node_max_size" {
-  description = "Maximum node count for managed node group"
-  type        = number
-  default     = 6
-}
-
-variable "cluster_public_access_cidrs" {
-  description = "Allowed CIDRs for EKS public endpoint access"
-  type        = list(string)
-  default     = ["0.0.0.0/0"]
+variable "allowed_app_cidr" {
+  description = "CIDR allowed to access app ports on Minikube EC2"
+  type        = string
+  default     = "0.0.0.0/0"
 }

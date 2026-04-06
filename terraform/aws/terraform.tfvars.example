@@ -1,12 +1,13 @@
 aws_region       = "us-east-1"
 project_name     = "banking-devops"
-vpc_cidr         = "10.10.0.0/16"
+environment      = "dev"
 
-cluster_version = "1.30"
+# Optional EC2 + Minikube setup
+create_minikube_ec2 = true
+ec2_size_profile    = "small"
+ec2_instance_type_override = ""
+key_name            = "my-aws-keypair"
 
-node_instance_types = ["t3.large"]
-node_desired_size   = 3
-node_min_size       = 2
-node_max_size       = 6
-
-cluster_public_access_cidrs = ["203.0.113.0/24"]
+# Use your own public IP with /32 for better security
+allowed_ssh_cidr = "YOUR_PUBLIC_IP/32"
+allowed_app_cidr = "YOUR_PUBLIC_IP/32"

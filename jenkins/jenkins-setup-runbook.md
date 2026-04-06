@@ -1,68 +1,57 @@
-# Jenkins Setup Runbook (End-to-End CI/CD + IaC)
+# Jenkins Setup Runbook (End-to-End CI/CD)
 
 ## 1. Required Jenkins Credentials
 
-Create these credentials in Jenkins before running the pipeline:
-
-1. `docker-registry-creds` (Username/Password)
-- Username: AWS Access Key ID with ECR push permissions (or Docker registry username)
-- Password: AWS Secret Access Key (or Docker registry password/token)
-
-2. `banking-aws-creds` (AWS Credentials)
-- Type: AWS Credentials
-- Credential ID: must match `AWS_CREDENTIALS_ID`
-- Scope: Global
+No credentials are required for the default simple pipeline.
 
 ## 2. Jenkins Job Environment Variables
 
 Use values from [jenkins/job-vars.example.env](jenkins/job-vars.example.env).
 
-Minimum required for full automation:
-- `DOCKER_REGISTRY`
-- `AWS_REGION`
-- `EKS_CLUSTER_NAME`
-- `AWS_CREDENTIALS_ID`
-- `TERRAFORM_ENABLED`
-- `TERRAFORM_AUTO_APPLY`
+Main pipeline controls are available as Jenkins job parameters:
 
-## 3. IAM Permissions Needed
+- `APP_NAME`
 
-Ensure Jenkins AWS principal can:
-- ECR: push/pull images
-- EKS: describe cluster, update kubeconfig, interact with cluster auth
-- EC2/VPC/IAM resources used by Terraform EKS module
-- Optional: Route53/ACM if your ingress/TLS flow requires it
+## 3. Agent Tooling Requirements
+
+Ensure Jenkins agent has:
+
+- Docker daemon access
+- Python 3 and pip
 
 ## 4. Recommended First Run Mode
 
-For safer first execution:
-- `TERRAFORM_ENABLED=true`
-- `TERRAFORM_AUTO_APPLY=false`
+For first execution:
+- Keep `APP_NAME=mobile-banking-backend`.
 
-This gives plan + build + scans without mutating infrastructure.
-
-Then switch to full mode:
-- `TERRAFORM_AUTO_APPLY=true`
+This runs unit tests and Docker build only.
 
 ## 5. One-Run Execution Checklist
 
 1. Trigger Jenkins pipeline on `main`.
-2. Confirm Terraform stages complete (fmt/validate/plan/apply if enabled).
-3. Confirm image build and Trivy scan pass.
-4. Confirm image push succeeds.
-5. Confirm K8s deployment rollout status succeeds.
-6. Confirm post-deploy smoke checks list running pods/service/ingress.
-
-## 6. Quick Verification Commands
-
-After successful run:
-
-```bash
-kubectl -n banking get deploy,pods,svc,ingress
-```
+2. Confirm unit tests pass.
+3. Confirm image build succeeds.
+4. Confirm `reports/pytest.xml` is archived in Jenkins build artifacts.
 
 ## 7. Troubleshooting Pointers
 
-- ECR push fails: verify `DOCKER_REGISTRY` format and `docker-registry-creds`.
-- EKS deploy fails: verify `AWS_CREDENTIALS_ID`, `AWS_REGION`, and cluster name.
-- Terraform apply fails: run local `terraform plan` in [terraform/aws](terraform/aws).
+- Python setup fails: verify `python3` is available on Jenkins agent.
+- Docker build fails: verify Docker daemon access from Jenkins agent user.
+
+## 8. Optional Bootstrap with JCasC + Job DSL
+
+Use repository artifacts:
+
+- `jenkins/casc/jenkins.yaml`
+- `jenkins/jobdsl/mobile-banking-backend.groovy`
+
+Steps:
+
+1. Install Jenkins plugins: Configuration as Code and Job DSL.
+2. Set environment variable `CASC_JENKINS_CONFIG` to point at `jenkins/casc/jenkins.yaml`.
+3. Set secure runtime variables before Jenkins start:
+	- `JENKINS_ADMIN_USER`
+	- `JENKINS_ADMIN_PASSWORD`
+4. Restart Jenkins and confirm JCasC loads with no validation errors.
+5. Edit repository URL in `jenkins/jobdsl/mobile-banking-backend.groovy`.
+6. Run seed processing to create the pipeline job `mobile-banking-backend`.
