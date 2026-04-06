@@ -76,6 +76,10 @@ Only one Jenkins parameter is required:
 
 - `APP_NAME` (default: `mobile-banking-backend`)
 
+Optional CD parameter:
+
+- `ENABLE_CD=true` to deploy automatically after successful build on `main`
+
 ## 6) Optional advanced stack
 
 If you want to learn advanced DevOps later, these are still available:

@@ -11,6 +11,7 @@ Create a Jenkins Pipeline job and point it to this repository root `Jenkinsfile`
 The pipeline uses one parameter:
 
 - `APP_NAME`
+- `ENABLE_CD` (`true` to auto-deploy on `main`)
 
 ## 3. Agent Requirements
 
@@ -28,6 +29,7 @@ Jenkins agent must have:
 
 - Test report published from `reports/pytest.xml`
 - Container image is built with Docker
+- Optional CD stage deploys app with Docker Compose when `ENABLE_CD=true` on `main`
 
 Related setup guide:
 

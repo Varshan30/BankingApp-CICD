@@ -3,6 +3,7 @@ pipeline {
 
   parameters {
     string(name: 'APP_NAME', defaultValue: 'mobile-banking-backend', description: 'Container image/application name')
+    booleanParam(name: 'ENABLE_CD', defaultValue: false, description: 'Deploy app after successful build on main branch')
   }
 
   environment {
@@ -77,6 +78,31 @@ pipeline {
             sh 'docker build -t ${IMAGE} .'
           } else {
             bat 'docker build -t %IMAGE% .'
+          }
+        }
+      }
+    }
+
+    stage('Deploy (CD)') {
+      when {
+        allOf {
+          branch 'main'
+          expression { return params.ENABLE_CD }
+        }
+      }
+      steps {
+        script {
+          if (isUnix()) {
+            sh '''
+              set -euo pipefail
+              docker compose up -d app
+              curl -fsS http://localhost:8080/health
+            '''
+          } else {
+            bat '''
+              docker compose up -d app
+              powershell -NoProfile -Command "(Invoke-WebRequest -UseBasicParsing http://localhost:8080/health -TimeoutSec 20).StatusCode"
+            '''
           }
         }
       }
