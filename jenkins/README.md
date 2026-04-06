@@ -54,7 +54,17 @@ Important:
 
 ## 7. Run Jenkins Now (Quick Start)
 
-1. Start Jenkins using Docker:
+1. Start Jenkins using one command:
+
+	Windows PowerShell:
+
+	.\\scripts\\start-jenkins.ps1
+
+	Linux/macOS:
+
+	./scripts/start-jenkins.sh
+
+	Or manual Docker command:
 
 	docker run -d --name jenkins -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
 
