@@ -18,6 +18,7 @@ Jenkins agent must have:
 
 - Docker
 - Python 3 + pip
+- Linux or Windows agent is supported by this pipeline
 
 ## 4. Pipeline Security Gates
 
@@ -50,3 +51,23 @@ How to use:
 Important:
 
 - Replace default admin credentials via environment variables before production use.
+
+## 7. Run Jenkins Now (Quick Start)
+
+1. Start Jenkins using Docker:
+
+	docker run -d --name jenkins -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts
+
+2. Open Jenkins:
+
+	http://localhost:8080
+
+3. Create Pipeline job:
+
+	- New Item -> Pipeline -> name: mobile-banking-backend
+	- Pipeline Definition: Pipeline script from SCM
+	- SCM: Git
+	- Repository URL: your GitHub repository
+	- Script Path: Jenkinsfile
+
+4. Build Now to execute tests and Docker image build.

@@ -27,31 +27,59 @@ pipeline {
 
     stage('Setup Python') {
       steps {
-        sh '''
-          set -euo pipefail
-          python3 -m venv .venv
-          . .venv/bin/activate
-          pip install --upgrade pip
-          pip install -r app/requirements.txt
-          pip install pytest
-          mkdir -p reports
-        '''
+        script {
+          if (isUnix()) {
+            sh '''
+              set -euo pipefail
+              python3 -m venv .venv
+              . .venv/bin/activate
+              pip install --upgrade pip
+              pip install -r app/requirements.txt
+              pip install pytest
+              mkdir -p reports
+            '''
+          } else {
+            bat '''
+              python -m venv .venv
+              call .venv\\Scripts\\activate
+              python -m pip install --upgrade pip
+              pip install -r app\\requirements.txt
+              pip install pytest
+              if not exist reports mkdir reports
+            '''
+          }
+        }
       }
     }
 
     stage('Unit Tests') {
       steps {
-        sh '''
-          set -euo pipefail
-          . .venv/bin/activate
-          pytest app/test_app.py -q --junitxml=reports/pytest.xml
-        '''
+        script {
+          if (isUnix()) {
+            sh '''
+              set -euo pipefail
+              . .venv/bin/activate
+              pytest app/test_app.py -q --junitxml=reports/pytest.xml
+            '''
+          } else {
+            bat '''
+              call .venv\\Scripts\\activate
+              pytest app\\test_app.py -q --junitxml=reports\\pytest.xml
+            '''
+          }
+        }
       }
     }
 
     stage('Build Container') {
       steps {
-        sh 'docker build -t ${IMAGE} .'
+        script {
+          if (isUnix()) {
+            sh 'docker build -t ${IMAGE} .'
+          } else {
+            bat 'docker build -t %IMAGE% .'
+          }
+        }
       }
     }
   }
