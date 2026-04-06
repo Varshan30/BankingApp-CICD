@@ -66,7 +66,8 @@ Important:
 
 	Or manual Docker command:
 
-	docker run -d --name jenkins -p 8081:8080 -p 50000:50000 jenkins/jenkins:lts
+	docker build -t local/jenkins-devops:lts -f jenkins/Dockerfile .
+	docker run -d --name jenkins --user root -p 8081:8080 -p 50000:50000 -v jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock local/jenkins-devops:lts
 
 2. Open Jenkins:
 
@@ -81,3 +82,8 @@ Important:
 	- Script Path: Jenkinsfile
 
 4. Build Now to execute tests and Docker image build.
+
+Why this is needed:
+
+- `jenkins/Dockerfile` installs Python and Docker CLI inside Jenkins container.
+- Docker socket mount lets pipeline run `docker build` from Jenkins.
