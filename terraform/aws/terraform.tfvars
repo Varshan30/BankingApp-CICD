@@ -9,4 +9,4 @@ node_desired_size   = 2
 node_min_size       = 2
 node_max_size       = 2
 
-cluster_public_access_cidrs = ["183.82.204.32/32"]
+cluster_public_access_cidrs = ["27.62.114.127/32"]

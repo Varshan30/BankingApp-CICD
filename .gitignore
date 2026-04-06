@@ -39,6 +39,8 @@ tfplan
 
 # Docker
 *.log
+reports/
+terraform/aws/plan.out
 
 # Ansible
 *.retry

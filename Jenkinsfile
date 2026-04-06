@@ -6,8 +6,10 @@ pipeline {
     IMAGE_TAG = "${env.BUILD_NUMBER}"
     REGISTRY = "${env.DOCKER_REGISTRY}"
     IMAGE = "${APP_NAME}:${IMAGE_TAG}"
-    AWS_DEFAULT_REGION = "${env.AWS_REGION}"
-    TERRAFORM_DIR = "terraform/aws"
+    DEPLOY_TARGET = "minikube"
+    MINIKUBE_PROFILE = "minikube"
+    INGRESS_MANIFEST = "k8s/ingress.minikube.yaml"
+    APPLY_INGRESS = "false"
     ANSIBLE_PLAYBOOK = "ansible/playbooks/site.yml"
     ANSIBLE_INVENTORY = "ansible/inventory/hosts.ini"
   }
@@ -30,90 +32,16 @@ pipeline {
       steps {
         script {
           def registry = env.DOCKER_REGISTRY?.trim()
-          if (registry) {
+          if (env.DEPLOY_TARGET == 'minikube') {
+            env.REGISTRY = ""
+            env.IMAGE = "${env.APP_NAME}:${env.IMAGE_TAG}"
+          } else if (registry) {
             env.REGISTRY = registry
             env.IMAGE = "${registry}/${env.APP_NAME}:${env.IMAGE_TAG}"
           } else {
             env.REGISTRY = ""
             env.IMAGE = "${env.APP_NAME}:${env.IMAGE_TAG}"
           }
-          echo "Resolved image reference: ${env.IMAGE}"
-        }
-      }
-    }
-
-    stage('Terraform Format + Validate') {
-      when {
-        expression { return env.TERRAFORM_ENABLED == 'true' }
-      }
-      steps {
-        dir("${env.TERRAFORM_DIR}") {
-          sh '''
-            set -euo pipefail
-            terraform fmt -check -recursive
-            terraform init
-            terraform validate
-          '''
-        }
-      }
-    }
-
-    stage('Terraform Plan') {
-      when {
-        expression { return env.TERRAFORM_ENABLED == 'true' }
-      }
-      steps {
-        dir("${env.TERRAFORM_DIR}") {
-          sh '''
-            set -euo pipefail
-            terraform plan -out=tfplan
-          '''
-        }
-      }
-    }
-
-    stage('Terraform Apply') {
-      when {
-        allOf {
-          anyOf {
-            branch 'main'
-            branch 'master'
-          }
-          expression { return env.TERRAFORM_ENABLED == 'true' && env.TERRAFORM_AUTO_APPLY == 'true' }
-        }
-      }
-      steps {
-        dir("${env.TERRAFORM_DIR}") {
-          sh '''
-            set -euo pipefail
-            terraform apply -auto-approve tfplan
-          '''
-        }
-      }
-    }
-
-    stage('Resolve Infra Outputs') {
-      when {
-        expression { return env.TERRAFORM_ENABLED == 'true' }
-      }
-      steps {
-        script {
-          env.EKS_CLUSTER_NAME = sh(
-            script: "cd ${env.TERRAFORM_DIR} && terraform output -raw eks_cluster_name",
-            returnStdout: true
-          ).trim()
-
-          def ecrRepo = sh(
-            script: "cd ${env.TERRAFORM_DIR} && terraform output -raw ecr_repository_url",
-            returnStdout: true
-          ).trim()
-
-          if (!env.DOCKER_REGISTRY?.trim() && ecrRepo) {
-            env.REGISTRY = ecrRepo
-            env.IMAGE = "${ecrRepo}:${env.IMAGE_TAG}"
-          }
-
-          echo "Resolved cluster: ${env.EKS_CLUSTER_NAME}"
           echo "Resolved image reference: ${env.IMAGE}"
         }
       }
@@ -201,72 +129,95 @@ pipeline {
             branch 'main'
             branch 'master'
           }
-          expression { return env.REGISTRY?.trim() }
+          expression { return env.DEPLOY_TARGET != 'minikube' && env.REGISTRY?.trim() }
         }
       }
       steps {
         script {
-          if (env.REGISTRY.contains('amazonaws.com') && env.AWS_CREDENTIALS_ID?.trim() && env.AWS_REGION?.trim()) {
-            withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS_ID]]) {
-              sh '''
-                set -euo pipefail
-                aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${REGISTRY}
-                docker push ${IMAGE}
-              '''
-            }
-          } else {
-            withCredentials([usernamePassword(credentialsId: 'docker-registry-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-              sh '''
-                set -euo pipefail
-                echo "$DOCKER_PASS" | docker login ${REGISTRY} -u "$DOCKER_USER" --password-stdin
-                docker push ${IMAGE}
-              '''
-            }
+          withCredentials([usernamePassword(credentialsId: 'docker-registry-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+            sh '''
+              set -euo pipefail
+              echo "$DOCKER_PASS" | docker login ${REGISTRY} -u "$DOCKER_USER" --password-stdin
+              docker push ${IMAGE}
+            '''
           }
         }
       }
     }
 
-    stage('Validate Kubernetes Manifests') {
+    stage('Minikube Preflight') {
+      when {
+        expression { return env.DEPLOY_TARGET == 'minikube' }
+      }
       steps {
         sh '''
           set -euo pipefail
-          sed "s|REPLACE_WITH_IMAGE|${IMAGE}|g" k8s/deployment.yaml > reports/deployment.rendered.yaml
-          kubectl apply --dry-run=client -f k8s/namespace.yaml
-          kubectl apply --dry-run=client -f reports/deployment.rendered.yaml
-          kubectl apply --dry-run=client -f k8s/service.yaml
-          kubectl apply --dry-run=client -f k8s/networkpolicy.yaml
-          kubectl apply --dry-run=client -f k8s/hpa.yaml
-          kubectl apply --dry-run=client -f k8s/ingress.yaml
+          minikube -p ${MINIKUBE_PROFILE} status
+          kubectl config use-context ${MINIKUBE_PROFILE} || true
+          minikube -p ${MINIKUBE_PROFILE} addons enable ingress
+          minikube -p ${MINIKUBE_PROFILE} addons enable metrics-server || true
+          kubectl version --request-timeout=15s
         '''
       }
     }
 
-    stage('Deploy to EKS') {
+    stage('Load Image Into Minikube') {
+      when {
+        expression { return env.DEPLOY_TARGET == 'minikube' }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+          minikube -p ${MINIKUBE_PROFILE} image load ${IMAGE}
+        '''
+      }
+    }
+
+    stage('Validate Kubernetes Manifests') {
+      when {
+        expression { return env.DEPLOY_TARGET == 'minikube' }
+      }
+      steps {
+        sh '''
+          set -euo pipefail
+          kubectl config use-context ${MINIKUBE_PROFILE} || true
+          sed "s|REPLACE_WITH_IMAGE|${IMAGE}|g" k8s/deployment.yaml > reports/deployment.rendered.yaml
+          kubectl apply --dry-run=client --validate=false --request-timeout=15s -f k8s/namespace.yaml
+          kubectl apply --dry-run=client --validate=false --request-timeout=15s -f reports/deployment.rendered.yaml
+          kubectl apply --dry-run=client --validate=false --request-timeout=15s -f k8s/service.yaml
+          kubectl apply --dry-run=client --validate=false --request-timeout=15s -f k8s/networkpolicy.yaml
+          kubectl apply --dry-run=client --validate=false --request-timeout=15s -f k8s/hpa.yaml
+          if [ "${APPLY_INGRESS}" = "true" ]; then
+            kubectl apply --dry-run=client --validate=false --request-timeout=15s -f ${INGRESS_MANIFEST}
+          fi
+        '''
+      }
+    }
+
+    stage('Deploy to Minikube') {
       when {
         allOf {
           anyOf {
             branch 'main'
             branch 'master'
           }
-          expression { return env.AWS_CREDENTIALS_ID?.trim() && env.EKS_CLUSTER_NAME?.trim() && env.AWS_REGION?.trim() }
+          expression { return env.DEPLOY_TARGET == 'minikube' }
         }
       }
       steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS_ID]]) {
-          sh '''
-            set -euo pipefail
-            aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
-            kubectl apply -f k8s/namespace.yaml
-            kubectl apply -f k8s/cert-issuer.yaml
-            sed "s|REPLACE_WITH_IMAGE|${IMAGE}|g" k8s/deployment.yaml | kubectl apply -f -
-            kubectl apply -f k8s/service.yaml
-            kubectl apply -f k8s/networkpolicy.yaml
-            kubectl apply -f k8s/hpa.yaml
-            kubectl apply -f k8s/ingress.yaml
-            kubectl -n banking rollout status deployment/banking-backend --timeout=120s
-          '''
-        }
+        sh '''
+          set -euo pipefail
+          kubectl config use-context ${MINIKUBE_PROFILE} || true
+          kubectl apply --validate=false --request-timeout=15s -f k8s/namespace.yaml
+          sed "s|REPLACE_WITH_IMAGE|${IMAGE}|g" k8s/deployment.yaml | kubectl apply --validate=false --request-timeout=15s -f -
+          kubectl apply --validate=false --request-timeout=15s -f k8s/service.yaml
+          kubectl apply --validate=false --request-timeout=15s -f k8s/networkpolicy.yaml
+          kubectl apply --validate=false --request-timeout=15s -f k8s/hpa.yaml
+          if [ "${APPLY_INGRESS}" = "true" ]; then
+            kubectl apply --validate=false --request-timeout=15s -f ${INGRESS_MANIFEST}
+          fi
+          kubectl -n banking rollout status deployment/banking-backend --timeout=120s
+        '''
       }
     }
 
@@ -277,20 +228,19 @@ pipeline {
             branch 'main'
             branch 'master'
           }
-          expression { return env.AWS_CREDENTIALS_ID?.trim() && env.EKS_CLUSTER_NAME?.trim() && env.AWS_REGION?.trim() }
+          expression { return env.DEPLOY_TARGET == 'minikube' }
         }
       }
       steps {
-        withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: env.AWS_CREDENTIALS_ID]]) {
-          sh '''
-            set -euo pipefail
-            aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
-            kubectl -n banking get deploy banking-backend
-            kubectl -n banking get pods -l app=banking-backend
-            kubectl -n banking get svc banking-backend
-            kubectl -n banking get ingress banking-backend-ingress || true
-          '''
-        }
+        sh '''
+          set -euo pipefail
+          kubectl config use-context ${MINIKUBE_PROFILE} || true
+          kubectl -n banking get deploy banking-backend
+          kubectl -n banking get pods -l app=banking-backend
+          kubectl -n banking get svc banking-backend-service
+          kubectl -n banking get ingress banking-backend-ingress || true
+          minikube -p ${MINIKUBE_PROFILE} service banking-backend-service -n banking --url
+        '''
       }
     }
 

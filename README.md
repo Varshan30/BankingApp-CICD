@@ -7,8 +7,8 @@ It demonstrates:
 - Continuous Integration with automated tests
 - Security gates (SAST, dependency scan, container image scan)
 - Container image build and push
-- Automated infrastructure provisioning with Terraform modules
-- Continuous Deployment to Amazon EKS with rolling updates
+- Automated infrastructure provisioning with Terraform modules (optional, AWS)
+- Continuous Deployment to Minikube with rolling updates
 - Production hardening with ingress TLS, autoscaling, and network policies
 
 ## Repository Structure
@@ -27,16 +27,17 @@ It demonstrates:
 - Source Control: GitHub/GitLab
 - CI/CD: Jenkins
 - Containerization: Docker
-- Orchestration: Amazon EKS (managed Kubernetes)
-- Infrastructure as Code: Terraform modules (VPC + EKS)
+- Orchestration: Minikube (local Kubernetes)
+- Infrastructure as Code: Terraform modules (VPC + EKS) for optional AWS environments
 
 ### End-to-End Flow
 
 1. Developers push backend code.
 2. Jenkins pipeline triggers automatically.
 3. Security gates run (Bandit, pip-audit, Trivy).
-4. Docker image is built and pushed to registry.
-5. Application is deployed to EKS using rolling update strategy.
+4. Docker image is built.
+5. Docker image is loaded into Minikube.
+6. Application is deployed to Minikube using rolling update strategy.
 6. Ingress, TLS, HPA, and network policies are enforced.
 
 ### Reliability Features
@@ -74,7 +75,7 @@ The service starts on port `8080`.
 docker build -t mobile-banking-backend:local .
 ```
 
-## 3) Provision infrastructure with Terraform
+## 3) (Optional) Provision AWS infrastructure with Terraform
 
 ```bash
 cd terraform/aws
@@ -84,23 +85,31 @@ terraform init
 terraform apply
 ```
 
-## 4) Configure kubectl for EKS
+## 4) Start Minikube and set kubectl context
 
 ```bash
-aws eks update-kubeconfig --name <eks_cluster_name> --region <aws_region>
+minikube start
+kubectl config use-context minikube
 ```
 
-## 5) Install ingress and cert-manager
+## 5) Enable Minikube ingress
 
 ```bash
-./scripts/install_ingress_tls.sh
+minikube addons enable ingress
 ```
 
-## 6) Deploy to EKS
+## 6) Deploy to Minikube
 
 ```bash
-export IMAGE=docker.io/your-org/mobile-banking-backend:1
+export IMAGE=mobile-banking-backend:local
 ./scripts/deploy.sh
+```
+
+PowerShell (Windows):
+
+```powershell
+$env:IMAGE="mobile-banking-backend:local"
+./scripts/deploy.ps1
 ```
 
 ## 7) Configure Jenkins Pipeline
@@ -110,19 +119,17 @@ Create a Pipeline job that points to this repository and uses the root `Jenkinsf
 Set job environment variables:
 
 - `DOCKER_REGISTRY`
-- `AWS_CREDENTIALS_ID`
-- `AWS_REGION`
-- `EKS_CLUSTER_NAME`
-- `TERRAFORM_ENABLED` (`true`/`false`)
-- `TERRAFORM_AUTO_APPLY` (`true`/`false`)
+- `DEPLOY_TARGET` (`minikube`)
+- `MINIKUBE_PROFILE` (default `minikube`)
+- `INGRESS_MANIFEST` (default `k8s/ingress.minikube.yaml`)
+- `APPLY_INGRESS` (`true`/`false`, default `false`)
 - `ANSIBLE_ENABLED` (`true`/`false`, optional)
 - `ANSIBLE_PLAYBOOK` (optional, default `ansible/playbooks/site.yml`)
 - `ANSIBLE_INVENTORY` (optional, default `ansible/inventory/hosts.ini`)
 
-Create Jenkins credentials:
+Create Jenkins credentials (optional, only when pushing to a remote registry):
 
 - `docker-registry-creds` (username/password)
-- AWS credentials referenced by `AWS_CREDENTIALS_ID`
 
 Pipeline security gates:
 
@@ -133,17 +140,18 @@ Pipeline security gates:
 Pipeline integration flow (Jenkins):
 
 - Resolve image reference
-- Optional Terraform fmt/validate/plan/apply
-- Resolve EKS/ECR outputs from Terraform
 - Optional Ansible bootstrap run
 - Unit tests + SAST + dependency scan
 - Docker build + Trivy scan
-- Push image (main/master) with automatic auth mode:
-	- ECR registry (`*.amazonaws.com`): AWS CLI login using `AWS_CREDENTIALS_ID`
-	- Other registries: username/password credential `docker-registry-creds`
+- Optional push image to remote registry (non-minikube targets)
+- Minikube preflight check
+- Load image into Minikube
 - Kubernetes manifest validation
-- Deploy to EKS (main/master)
+- Deploy to Minikube (main/master)
 - Post-deploy smoke checks
+
+Ingress is optional by default for Minikube (`APPLY_INGRESS=false`).
+Use service URL or port-forward for local access; enable ingress only when nginx admission is ready.
 
 ## 8) GitHub Actions CI/CD
 
